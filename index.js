@@ -1,24 +1,13 @@
-const express = require("express");
-const http = require("http");
-const socketIo = require("socket.io");
-const cors = require("cors");
-
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
-
-// Enable CORS for the specific origin where your frontend is hosted
-const corsOptions = {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-};
-
-app.use(cors(corsOptions));
-// Enable CORS for all routes
+const io = require("socket.io")(8900, {
+    cors: {
+        origin: "http://localhost:3000",
+    },
+});
 
 let users = [];
 
 const addUser = (userId, socketId) => {
+    console.log("adduser", userId, socketId);
     !users.some((user) => user.userId === userId) &&
         users.push({ userId, socketId });
 };
@@ -39,6 +28,7 @@ io.on("connection", (socket) => {
         console.log("Users after adding:", users);
         io.emit("getUsers", users);
     });
+    console.log(users);
 
     socket.on("sendMessage", ({ senderId, receiverId, text }) => {
         const user = getUser(receiverId);
@@ -58,10 +48,4 @@ io.on("connection", (socket) => {
         removeUser(socket.id);
         io.emit("getUsers", users);
     });
-});
-
-const PORT = process.env.PORT || 8900;
-
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
 });
